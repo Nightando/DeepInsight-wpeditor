@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深维公众号组件库 - 测试页面</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f5f5f0;
+      color: #2d2d2d;
+    }
+    .container { max-width: 820px; margin: 0 auto; }
+    .header {
+      text-align: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #0d2540 0%, #1a3d5f 100%);
+      color: white;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border-bottom: 3px solid #b2d9c4;
+    }
+    .header h1 { margin: 0 0 6px; font-size: 22px; }
+    .header p { margin: 0; color: #b2d9c4; font-size: 13px; }
+    .info {
+      background: #e8f1f7;
+      padding: 14px 18px;
+      border-left: 4px solid #0d2540;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #0d2540;
+      margin-bottom: 16px;
+    }
+    .section {
+      background: white;
+      padding: 20px 22px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0d2540;
+      margin: 0 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #b2d9c4;
+    }
+    .component-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 8px;
+    }
+    .component-list li {
+      padding: 8px 12px;
+      background: #fafafa;
+      border-radius: 6px;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid #eee;
+    }
+    .badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      background: #edf7f2;
+      color: #1a3d1f;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .editor-area {
+      width: 100%;
+      min-height: 320px;
+      padding: 16px;
+      border: 2px dashed #b2d9c4;
+      border-radius: 8px;
+      outline: none;
+      font-size: 15px;
+      line-height: 1.8;
+      background: #fff;
+    }
+    .editor-area:focus { border-color: #0d2540; background: #fff; }
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .btn {
+      padding: 7px 12px;
+      background: #0d2540;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #1a3d5f; }
+    .btn-success { background: #10b981; }
+    .btn-success:hover { background: #0d8160; }
+    .test-result {
+      margin-top: 12px;
+      padding: 12px;
+      background: #fafafa;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'SF Mono', Consolas, monospace;
+      white-space: pre-wrap;
+      max-height: 180px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+    }
+    .test-result.error { background: #faeae8; color: #5a1010; }
+    .stat-row {
+      display: flex;
+      gap: 12px;
+      font-size: 13px;
+      color: #5a5a5a;
+      margin-bottom: 8px;
+    }
+    .stat {
+      background: #fafafa;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #eee;
+    }
+    .stat strong { color: #0d2540; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="header">
+      <h1>深维 · 公众号组件库</h1>
+      <p>本地组件预览页 · 基于 components.js 构建</p>
+    </div>
+
+    <div class="info">
+      本页用于测试组件库的渲染效果。点击下方按钮可将组件插入到模拟编辑器中。<br>
+      <strong>真实使用场景：</strong> Chrome 扩展程序 → 开发者模式 → 加载「Z0公众号编辑插件」文件夹 → 打开 mp.weixin.qq.com 编辑页面 → 点击浏览器工具栏图标使用。
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">① 组件库状态</h2>
+      <div id="status" style="font-size:13px; color:#5a5a5a;">加载中…</div>
+      <div id="componentCount" class="stat-row" style="margin-top:8px;"></div>
+      <ul class="component-list" id="componentList"></ul>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">② 模拟公众号编辑器</h2>
+      <p style="font-size:12px;color:#7a7a7a;margin:0 0 8px;">点击下方按钮可将组件插入到此处。在光标位置插入，支持多次插入。</p>
+      <div id="editor" class="editor-area" contenteditable="true">
+        <p>这里是模拟的微信公众号编辑器。点击下方按钮，体验组件一键插入效果。</p>
+      </div>
+      <div class="button-grid" id="buttonArea"></div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">③ 测试日志</h2>
+      <div class="test-result" id="testResult">等待测试…</div>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button class="btn btn-success" onclick="runAllTests()">运行全量渲染测试</button>
+        <button class="btn" onclick="clearEditor()">清空编辑器</button>
+        <button class="btn" onclick="clearLog()">清空日志</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="../shared/sanitize.js"></script>
+  <script src="../components/components.js"></script>
+  <script>
+    const resultEl = document.getElementById('testResult');
+    const statusEl = document.getElementById('status');
+    const listEl = document.getElementById('componentList');
+    const btnArea = document.getElementById('buttonArea');
+    const editor = document.getElementById('editor');
+    const compCount = document.getElementById('componentCount');
+
+    function log(text, isError) {
+      resultEl.className = 'test-result' + (isError ? ' error' : '');
+      const now = new Date().toLocaleTimeString();
+      resultEl.textContent += '\n[' + now + '] ' + text;
+      resultEl.scrollTop = resultEl.scrollHeight;
+    }
+    function clearLog() { resultEl.textContent = ''; log('日志已清空'); }
+    function clearEditor() { editor.innerHTML = '<p>（已清空，继续插入组件）</p>'; log('编辑器已清空'); }
+
+    // 1) 检查组件库
+    if (!window.DEEPINSIGHT_COMPONENTS) {
+      statusEl.innerHTML = '<span style="color:#ef4444;">✗ 组件库未加载（请确保 components/components.js 路径正确）</span>';
+      log('ERROR: DEEPINSIGHT_COMPONENTS 未定义', true);
+    } else {
+      const lib = DEEPINSIGHT_COMPONENTS;
+      const comps = lib.list;
+      statusEl.innerHTML = '<span style="color:#10b981;">✓ 组件库已加载 · 版本 ' + lib.version + '</span>';
+
+      // 分类统计
+      const catCount = {};
+      let fieldTotal = 0;
+      comps.forEach(function(c) {
+        catCount[c.category] = (catCount[c.category] || 0) + 1;
+        fieldTotal += c.fields.length;
+      });
+      let stats = '<div class="stat"><strong>' + comps.length + '</strong> 个组件</div>' +
+                  '<div class="stat"><strong>' + fieldTotal + '</strong> 个可配置字段</div>' +
+                  '<div class="stat"><strong>' + Object.keys(catCount).length + '</strong> 个分类</div>';
+      compCount.innerHTML = stats;
+
+      // 列表
+      let html = '';
+      comps.forEach(function(c) {
+        html += '<li><span>' + (c.icon || '◆') + ' ' + c.name + '</span><span class="badge">' + (c.category || '') + '</span></li>';
+      });
+      listEl.innerHTML = html;
+
+      // 按钮
+      let btns = '';
+      comps.forEach(function(c) {
+        btns += '<button class="btn" onclick="insertComponent(\'' + c.id + '\')">' + (c.icon || '') + ' ' + c.name + '</button>';
+      });
+      btnArea.innerHTML = btns;
+
+      log('✓ 初始化成功：' + comps.length + ' 个组件');
+    }
+
+    // 2) 插入单个组件到模拟编辑器
+    window.insertComponent = function(id) {
+      try {
+        const comp = DEEPINSIGHT_COMPONENTS.getById(id);
+        if (!comp) { log('✗ 未找到组件: ' + id, true); return; }
+        const html = DEEPINSIGHT_COMPONENTS.renderComponent(id, {});
+
+        editor.focus();
+        // 使用 execCommand + Range 方式插入
+        let ok = false;
+        try {
+          // 优先 execCommand
+          document.execCommand('insertHTML', false, html);
+          ok = true;
+        } catch (e) {
+          try {
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0) {
+              const range = sel.getRangeAt(0);
+              range.deleteContents();
+              const temp = document.createElement('div');
+              temp.innerHTML = html;
+              const frag = document.createDocumentFragment();
+              let last;
+              while (temp.firstChild) last = frag.appendChild(temp.firstChild);
+              range.insertNode(frag);
+              if (last) {
+                const r = document.createRange();
+                r.setStartAfter(last); r.collapse(true);
+                sel.removeAllRanges(); sel.addRange(r);
+              }
+              ok = true;
+            }
+          } catch (e2) {}
+        }
+        if (!ok) editor.insertAdjacentHTML('beforeend', html);
+        log('✓ 已插入: ' + comp.name + ' (' + html.length + ' 字符)');
+      } catch (e) {
+        log('✗ 插入失败 ' + id + ': ' + e.message, true);
+      }
+    };
+
+    // 3) 全量测试
+    window.runAllTests = function() {
+      clearLog();
+      const comps = DEEPINSIGHT_COMPONENTS.list;
+      let success = 0, fail = 0, totalHTML = 0;
+      log('=== 开始全量渲染测试 ===');
+      comps.forEach(function(c) {
+        try {
+          const html = DEEPINSIGHT_COMPONENTS.renderComponent(c.id, {});
+          if (html && html.length > 0) {
+            success++;
+            totalHTML += html.length;
+            log('✓ ' + c.name + ' → ' + html.length + ' 字符');
+          } else {
+            fail++;
+            log('✗ ' + c.name + ' → 输出为空', true);
+          }
+        } catch (e) {
+          fail++;
+          log('✗ ' + c.name + ' → ' + e.message, true);
+        }
+      });
+      log('\n=== 测试结束 ===');
+      log('成功: ' + success + ' / 失败: ' + fail + ' / 总 HTML 长度: ' + totalHTML);
+      if (fail === 0) log('🎉 所有组件渲染正常！');
+    };
+  </script>
+</body>
+</html>

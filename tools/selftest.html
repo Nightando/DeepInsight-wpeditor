@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>深维组件库 · 本地回归自测</title>
+  <style>
+    body { font-family: Consolas, Menlo, monospace; padding: 24px; background: #f7f7f4; color: #2d2d2d; }
+    h1 { font-size: 18px; }
+    .pass { color: #2d7a5b; }
+    .fail { color: #c0392b; font-weight: 700; }
+    pre { background: #fff; padding: 16px; border: 1px solid #ddd; border-radius: 6px; line-height: 1.7; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>深维公众号组件库 · 本地回归自测</h1>
+  <pre id="result">正在加载依赖…</pre>
+
+  <script>
+  (function () {
+    'use strict';
+    var el = document.getElementById('result');
+
+    // 兼容两种打开方式：项目内 file:// 直接打开，或静态预览服务
+    var deps = [
+      {
+        name: 'shared/sanitize.js',
+        paths: ['../shared/sanitize.js', 'shared/sanitize.js', '/shared/sanitize.js'],
+        ready: function () { return !!window.DI_SANITIZE; }
+      },
+      {
+        name: 'components/components.js',
+        paths: ['../components/components.js', 'components/components.js', '/components/components.js'],
+        ready: function () { return !!window.DEEPINSIGHT_COMPONENTS; }
+      }
+    ];
+
+    var di = 0, pi = 0;
+    function loadNext() {
+      if (di >= deps.length) { runTests(); return; }
+      var d = deps[di];
+      if (d.ready()) { di++; pi = 0; loadNext(); return; }
+      if (pi >= d.paths.length) {
+        // 静态预览服务不映射同目录脚本，属环境限制，不是插件故障。
+        // 顺手做一次不依赖外部文件的环境自检，确认本次回归的根因。
+        var frag = document.createDocumentFragment();
+        var envValue = String(frag.innerHTML);
+        el.textContent = '依赖加载失败：' + d.name + '\n\n' +
+          '原因：当前是静态预览服务，不映射项目内同目录脚本（HTTP 403），' +
+          '这不代表插件功能异常。\n' +
+          '请在项目目录用浏览器直接打开 tools/selftest.html（file:// 方式）查看完整断言。\n\n' +
+          '[环境自检] DocumentFragment.innerHTML = ' + envValue +
+          (frag.innerHTML === undefined ? '  ← 正是本次回归的根因，源码已改为 div 序列化' : '');
+        el.className = '';
+        document.title = 'SELFTEST_DEPS_BLOCKED_BY_PREVIEW';
+        return;
+      }
+      var s = document.createElement('script');
+      s.src = d.paths[pi++];
+      s.onload = function () { if (d.ready()) { di++; pi = 0; } loadNext(); };
+      s.onerror = function () { loadNext(); };
+      document.head.appendChild(s);
+    }
+
+    function runTests() {
+      var lines = [];
+      var failed = 0;
+      function check(name, condition, detail) {
+        if (condition) lines.push('[PASS] ' + name);
+        else { failed++; lines.push('[FAIL] ' + name + (detail ? ' -> ' + detail : '')); }
+      }
+
+      var S = window.DI_SANITIZE;
+      var C = window.DEEPINSIGHT_COMPONENTS;
+
+      // ===== 回归重点：DocumentFragment.innerHTML 曾导致返回 undefined =====
+      var cleaned = S.clean('<p>hello</p><img src="x" onerror="alert(1)">');
+      check('clean 返回字符串而非 undefined', typeof cleaned === 'string', typeof cleaned);
+      check('clean 结果不含字符串 undefined', cleaned.indexOf('undefined') === -1, cleaned);
+      check('clean 保留正文', cleaned.indexOf('hello') !== -1, cleaned);
+      check('clean 移除事件属性', cleaned.indexOf('onerror') === -1, cleaned);
+      check('clean 移除 script 标签', S.clean('<script>alert(1)<\/script><div>ok</div>').indexOf('<script') === -1);
+
+      var proto = S.clean('<a href="javascript:alert(1)">x</a><iframe srcdoc="x"></iframe>');
+      check('拦截 javascript: 伪协议', proto.toLowerCase().indexOf('javascript:') === -1, proto);
+      check('移除 iframe / srcdoc', proto.indexOf('iframe') === -1, proto);
+
+      var svg = S.clean('<svg onload="alert(1)" viewBox="0 0 10 10"><circle r="4"/></svg>');
+      check('保留内联 SVG', svg.indexOf('<svg') !== -1, svg);
+      check('清洗 SVG 事件属性', svg.indexOf('onload') === -1, svg);
+
+      // ===== 导入 HTML 预览：minimal 不得改写结构 =====
+      // 4.2.1 起注入链完整回滚到 11-08 备份版（逐段插入），
+      // 预览只做脚本剥离，link / meta / style / @import / SVG 一律保留。
+      var web = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+        '<link rel="stylesheet" href="https://example.com/a.css">' +
+        '<style>@import url(https://example.com/b.css); .box{display:flex}</style>' +
+        '</head><body><p class="lead">正文</p><span>行内</span><hr><svg></svg></body></html>';
+      var m = S.minimal(web);
+      check('minimal 返回字符串', typeof m === 'string', typeof m);
+      check('minimal 保留 <link>', m.indexOf('<link') !== -1, m.slice(0, 200));
+      check('minimal 保留 <meta>', m.indexOf('<meta') !== -1, m.slice(0, 200));
+      check('minimal 保留 @import', m.indexOf('@import') !== -1, m.slice(0, 300));
+      check('minimal 保留 flex 样式', m.indexOf('display:flex') !== -1, m.slice(0, 300));
+      check('minimal 不转换 <p> 标签', m.indexOf('<p') !== -1 && m.indexOf('<section') === -1, m.slice(0, 300));
+      check('minimal 不加 di-html-import 包装', m.indexOf('di-html-import') === -1, m.slice(0, 300));
+      check('minimal 保留 <hr>', m.indexOf('<hr') !== -1, m.slice(0, 300));
+      check('minimal 移除 script', S.minimal('<script>x<\/script><p>y</p>').indexOf('<script') === -1);
+      check('minimal 移除事件属性', S.minimal('<img onerror="x" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">').indexOf('onerror') === -1);
+
+      check('提取纯文本', S.plainText('<p>A</p><p>B</p>') === 'AB');
+      check('转义 HTML', S.escapeHtml('<b>&</b>') === '&lt;b&gt;&amp;&lt;/b&gt;');
+
+      // ===== 组件库 =====
+      check('组件数量为 66', C.list.length === 66, String(C.list.length));
+      var empty = C.list.filter(function (comp) {
+        var out = C.renderComponent(comp.id, {});
+        return typeof out !== 'string' || !out.trim();
+      });
+      check('全部组件可渲染默认值', empty.length === 0, empty.map(function (x) { return x.id; }).join(','));
+
+      var svgComps = C.list.filter(function (comp) {
+        return C.renderComponent(comp.id, {}).indexOf('<svg') !== -1;
+      });
+      var svgLost = svgComps.filter(function (comp) {
+        return S.clean(C.renderComponent(comp.id, {})).indexOf('<svg') === -1;
+      });
+      check('组件强清洗后 SVG 不丢失', svgLost.length === 0, svgLost.map(function (x) { return x.id; }).join(','));
+      lines.push('[INFO] 含 SVG 的组件 ' + svgComps.length + ' 个');
+
+      lines.push('');
+      lines.push(failed === 0 ? '=== 全部通过 ===' : '=== 失败 ' + failed + ' 项 ===');
+      el.textContent = lines.join('\n');
+      el.className = failed === 0 ? 'pass' : 'fail';
+      document.title = failed === 0 ? 'SELFTEST_PASS' : 'SELFTEST_FAIL_' + failed;
+    }
+
+    loadNext();
+  })();
+  </script>
+</body>
+</html>

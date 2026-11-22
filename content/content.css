@@ -1,0 +1,443 @@
+/* ============================================================
+   深维公众号组件库 · 统一浮窗外观  v4.4.0
+   一套界面：单一头部 / 常驻状态与位置区 / 单一滚动体 / 可见滚动轨 / 页脚
+   边缘吸附 + 极窄收起把手 + 过渡动画全部保留，仅重构信息层级与呈现
+   ============================================================ */
+
+#di-floating-toolbar {
+  --di-navy: #0d2540;
+  --di-navy-2: #1a3d5f;
+  --di-mint: #b2d9c4;
+  --di-green: #10b981;
+  --di-green-d: #0d8160;
+  --di-ink: #2b3440;
+  --di-grey: #7b8794;
+  --di-line: #e6ebf0;
+  --di-bg: #f4f7f9;
+
+  /* 4.7.1：高度完全由视口决定，不再有 720px 上限。
+     --di-toolbar-top 由 JS 在初始化/拖拽/展开时同步为浮窗当前 top，
+     这样无论浮窗被拖到哪里，底部都固定留出 --di-toolbar-bottom 的空隙。 */
+  --di-toolbar-top: 80px;
+  --di-toolbar-bottom: 32px;
+  position: fixed;
+  top: 80px;
+  right: 0;
+  width: 400px;
+  height: calc(100vh - var(--di-toolbar-top) - var(--di-toolbar-bottom));
+  min-height: 160px;                   /* 极端矮视口下保底，内容仍可在 .di-tb-body 内滚动 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;                 /* 滚动只发生在 .di-tb-body 内 */
+  background: #fff;
+  border-radius: 14px 0 0 14px;
+  box-shadow: 0 18px 48px rgba(13, 37, 64, .22), 0 2px 8px rgba(0, 0, 0, .06);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif !important;
+  font-size: 13px;
+  color: var(--di-ink);
+  z-index: 999999;
+  border: 1px solid var(--di-line);
+  border-right: none;
+  user-select: none;
+  direction: ltr;
+  transition: left .35s cubic-bezier(.4, 0, .2, 1),
+              right .35s cubic-bezier(.4, 0, .2, 1),
+              border-radius .35s cubic-bezier(.4, 0, .2, 1),
+              box-shadow .35s ease;
+}
+#di-floating-toolbar *,
+#di-floating-toolbar *::before,
+#di-floating-toolbar *::after { box-sizing: border-box; }
+
+/* ---------- 拖拽中禁用过渡 ---------- */
+#di-floating-toolbar.di-dragging { transition: none !important; }
+
+/* ---------- 吸附左侧 ---------- */
+#di-floating-toolbar.di-dock-left {
+  border-radius: 0 14px 14px 0;
+  border-left: none;
+  border-right: 1px solid var(--di-line);
+  right: auto;
+  left: 0;
+}
+
+/* ============================================================
+   ① 唯一头部：品牌 / 版本 / 连接状态 / 折叠 / 拖拽
+   ============================================================ */
+#di-floating-toolbar .di-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 10px 14px;
+  background: linear-gradient(135deg, var(--di-navy) 0%, var(--di-navy-2) 100%);
+  color: #fff;
+  cursor: move;
+  flex-shrink: 0;
+  border-bottom: 2px solid var(--di-mint);
+  border-radius: 14px 0 0 0;
+}
+#di-floating-toolbar.di-dock-left .di-head { border-radius: 0 14px 0 0; }
+
+.di-head-left { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.di-brand-mark {
+  flex-shrink: 0;
+  background: var(--di-mint);
+  color: var(--di-navy);
+  font-weight: 800;
+  font-size: 14px;
+  padding: 5px 7px;
+  border-radius: 6px;
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+.di-brand-text { min-width: 0; }
+.di-brand-title { font-size: 13.5px; font-weight: 700; letter-spacing: .3px; white-space: nowrap; }
+.di-brand-sub { font-size: 10px; color: rgba(255, 255, 255, .66); margin-top: 1px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+
+.di-head-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.di-head-ver {
+  font-size: 10px;
+  color: var(--di-mint);
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(178, 217, 196, .35);
+  border-radius: 10px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.di-conn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, .82);
+  white-space: nowrap;
+}
+.di-conn-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #f5a623; flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(245, 166, 35, .22);
+}
+.di-conn-dot.ready { background: #4ade80; box-shadow: 0 0 0 2px rgba(74, 222, 128, .25); }
+.di-conn-dot.error { background: #ff7b72; box-shadow: 0 0 0 2px rgba(255, 123, 114, .25); }
+
+#di-floating-toolbar .di-tb-toggle {
+  cursor: pointer;
+  width: 22px; height: 22px;
+  line-height: 20px; text-align: center;
+  font-size: 15px; border-radius: 5px;
+  color: #fff; background: rgba(255, 255, 255, .16);
+  transition: background .15s;
+}
+#di-floating-toolbar .di-tb-toggle:hover { background: rgba(255, 255, 255, .34); }
+
+#di-floating-toolbar .di-tb-handle {
+  display: none;
+  width: 20px; height: 20px;
+  line-height: 20px; text-align: center;
+  font-size: 14px; color: rgba(255, 255, 255, .85);
+  writing-mode: vertical-lr; letter-spacing: 2px; font-weight: 600;
+}
+#di-floating-toolbar .di-tb-handle-icon { display: inline-block; animation: di-pulse 2s ease-in-out infinite; }
+@keyframes di-pulse { 0%, 100% { opacity: .6; } 50% { opacity: 1; } }
+
+/* ============================================================
+   ② 常驻通知条：滚动区之外，任何滚动位置都可见、可读
+   ============================================================ */
+#di-floating-toolbar .di-notice {
+  flex-shrink: 0;
+  background: #eef6ff;
+  border-bottom: 1px solid #cfe1f5;
+  border-left: 4px solid #2b6cb0;
+  padding: 7px 10px 7px 11px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-height: 108px;
+  overflow-y: auto;
+}
+#di-floating-toolbar .di-notice[hidden] { display: none !important; }
+.di-notice-lines { flex: 1; min-width: 0; }
+.di-notice-line {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: #1c3050;                 /* 深色文字，与浅底形成明确对比 */
+  font-weight: 600;
+  word-break: break-word;
+  white-space: normal;            /* 不做 nowrap / ellipsis，内容一定看得到 */
+}
+.di-notice-line + .di-notice-line { margin-top: 2px; }
+.di-notice-line.di-notice-success { color: #0d6b4b; }
+.di-notice-line.di-notice-error { color: #a5261c; }
+.di-notice-line.di-notice-info { color: #1c3050; }
+.di-notice-close {
+  flex-shrink: 0;
+  width: 18px; height: 18px; line-height: 16px;
+  border: none; border-radius: 4px;
+  background: rgba(13, 37, 64, .08); color: #1c3050;
+  font-size: 13px; cursor: pointer;
+}
+.di-notice-close:hover { background: rgba(13, 37, 64, .18); }
+
+/* ============================================================
+   ③ 常驻位置条：当前分区 / 当前条目 / 进度 / 分区跳转
+   ============================================================ */
+#di-floating-toolbar .di-posbar {
+  flex-shrink: 0;
+  background: #fff;
+  border-bottom: 1px solid var(--di-line);
+  padding: 7px 12px 6px;
+}
+.di-pos-row { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.di-pos-tag {
+  font-size: 9.5px; color: #fff; background: var(--di-navy);
+  border-radius: 3px; padding: 1px 5px; letter-spacing: .5px; flex-shrink: 0;
+}
+.di-pos-section { font-size: 12px; font-weight: 800; color: var(--di-navy); flex-shrink: 0; }
+.di-pos-item {
+  font-size: 10.5px; color: var(--di-grey);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;
+}
+.di-pos-pct { font-size: 10px; color: var(--di-grey); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+.di-pos-nav { display: flex; gap: 4px; margin-top: 6px; overflow-x: auto; scrollbar-width: none; }
+.di-pos-nav::-webkit-scrollbar { display: none; }
+.di-pos-chip {
+  flex: 1 0 auto;
+  min-width: 0;
+  padding: 3px 7px;
+  font-size: 10.5px;
+  color: #65758a;
+  background: var(--di-bg);
+  border: 1px solid #e2e8ee;
+  border-radius: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.di-pos-chip:hover { background: #e6f1ec; border-color: var(--di-mint); color: var(--di-navy); }
+.di-pos-chip.active {
+  background: var(--di-navy); color: #fff; border-color: var(--di-navy); font-weight: 700;
+}
+
+.di-pos-progress { margin-top: 6px; height: 3px; background: #e9eef3; border-radius: 2px; overflow: hidden; }
+.di-pos-progress > span {
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--di-green), var(--di-navy));
+  border-radius: 2px;
+}
+
+/* ============================================================
+   ④ 单一滚动体 + 常驻可见滚动轨
+   ============================================================ */
+#di-floating-toolbar .di-scroll-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+#di-floating-toolbar .di-tb-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;                 /* 唯一的纵向滚动容器 */
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  background: #fff;
+  scrollbar-width: none;             /* 原生条隐藏，改用右侧显式滚动轨 */
+  -ms-overflow-style: none;
+}
+#di-floating-toolbar .di-tb-body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* 4.6.0：快捷排版 / 自定义插槽从浮窗底部移到上方，组件库面板随其后。
+   仍然只有这一条滚动流，顺序靠 order 调整，不改任何功能逻辑。
+   位置条与滚动轨按 rect.top 自动识别新顺序，无需重建导航。 */
+#di-floating-toolbar .di-quick { order: 1; display: block; flex-shrink: 0; }
+#di-floating-toolbar .di-slots { order: 2; display: block; flex-shrink: 0; }
+#di-floating-toolbar #di-panel-host { order: 3; margin: 0; border: 0; padding: 0; display: block; flex-shrink: 0; }
+
+#di-floating-toolbar .di-rail {
+  flex-shrink: 0;
+  width: 18px;
+  position: relative;
+  background: #eef2f6;
+  border-left: 1px solid #dde5ec;
+}
+.di-rail-track { position: absolute; inset: 5px 3px; }
+.di-rail-thumb {
+  position: absolute;
+  left: 0; top: 0;
+  width: 12px;
+  min-height: 38px;
+  border-radius: 7px;
+  background: linear-gradient(180deg, var(--di-navy-2), var(--di-navy));
+  border: 1px solid rgba(255, 255, 255, .35);
+  box-shadow: 0 1px 4px rgba(13, 37, 64, .35);
+  cursor: grab;
+}
+.di-rail-thumb:active { cursor: grabbing; background: var(--di-green-d); }
+.di-rail-ticks { position: absolute; inset: 0; pointer-events: none; }
+.di-rail-tick {
+  position: absolute;
+  right: 0;
+  width: 5px;
+  height: 2px;
+  background: #b8c5d1;
+  border-radius: 1px;
+}
+.di-rail-tick.active { width: 9px; background: var(--di-green); }
+
+/* ============================================================
+   ⑤ 快捷排版：与面板分区使用同一套标题 / 按钮语言
+   ============================================================ */
+#di-floating-toolbar .di-block { padding: 10px 14px 12px; background: #fff; border-bottom: 1px solid var(--di-line); }
+#di-floating-toolbar .di-block:last-child { border-bottom: none; }
+
+#di-floating-toolbar .di-section-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-bottom: 9px;
+}
+#di-floating-toolbar .di-section-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 800; letter-spacing: 1px; color: var(--di-navy);
+}
+#di-floating-toolbar .di-section-title::before {
+  content: ''; width: 3px; height: 12px; border-radius: 2px; background: var(--di-mint);
+}
+#di-floating-toolbar .di-section-meta { font-size: 10px; color: #98a4b0; }
+/* 当前分区：只改颜色与色条，不改尺寸，滚动中不会跳动 */
+#di-floating-toolbar .di-quick.di-section-active .di-section-title::before,
+#di-floating-toolbar .di-slots.di-section-active .di-section-title::before { background: var(--di-green); }
+#di-floating-toolbar .di-quick.di-section-active .di-section-title,
+#di-floating-toolbar .di-slots.di-section-active .di-section-title { color: var(--di-navy-2); }
+
+#di-floating-toolbar .di-subhead {
+  font-size: 10px; color: #8c98a6; letter-spacing: .6px;
+  margin: 10px 2px 5px; font-weight: 700;
+}
+#di-floating-toolbar .di-subhead:first-of-type { margin-top: 2px; }
+
+#di-floating-toolbar .di-tb-row { display: flex; gap: 6px; margin: 5px 0; }
+
+#di-floating-toolbar .di-tb-btn {
+  flex: 1 1 0; min-width: 0;
+  padding: 7px 8px;
+  font-size: 11.5px; line-height: 1.4;
+  color: var(--di-ink);
+  background: var(--di-bg);
+  border: 1px solid #e2e8ee;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background .15s, color .15s, border-color .15s, transform .15s;
+}
+#di-floating-toolbar .di-tb-btn:hover {
+  background: #e6f1ec; border-color: var(--di-mint); color: var(--di-navy); transform: translateY(-1px);
+}
+#di-floating-toolbar .di-tb-btn:active { transform: translateY(0); }
+#di-floating-toolbar .di-tb-btn.di-tb-btn-primary {
+  background: var(--di-navy); color: #fff; border-color: var(--di-navy); font-weight: 700;
+}
+#di-floating-toolbar .di-tb-btn.di-tb-btn-primary:hover { background: var(--di-navy-2); color: #fff; }
+
+/* 自定义插槽 */
+#di-floating-toolbar .di-tb-custom-slots { display: flex; flex-direction: column; gap: 6px; }
+#di-floating-toolbar .di-tb-custom-slot {
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 10px; font-size: 11.5px; line-height: 1.4;
+  border-radius: 6px; cursor: pointer; font-family: inherit; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+  border: 1px dashed #cfd9e2; background: #fafcfd; color: #8c98a6;
+  transition: all .15s;
+}
+#di-floating-toolbar .di-tb-custom-slot:hover { border-color: var(--di-navy); color: var(--di-navy); background: #eef5f9; }
+#di-floating-toolbar .di-tb-custom-slot-filled {
+  border: 1px solid #d9e5ee; background: #f1f6fa; color: var(--di-navy);
+  font-weight: 700; justify-content: space-between; padding: 8px 12px;
+}
+#di-floating-toolbar .di-tb-custom-slot-filled:hover { background: var(--di-navy); color: #fff; }
+#di-floating-toolbar .di-tb-custom-slot-label { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+#di-floating-toolbar .di-tb-custom-slot-clear {
+  width: 16px; height: 16px; line-height: 14px; text-align: center; font-size: 11px;
+  border-radius: 50%; background: rgba(13, 37, 64, .09); color: #6c7b8a;
+  flex-shrink: 0; margin-left: 6px; cursor: pointer;
+}
+#di-floating-toolbar .di-tb-custom-slot-filled:hover .di-tb-custom-slot-clear { background: rgba(255, 255, 255, .25); color: #fff; }
+
+#di-floating-toolbar .di-tb-tip {
+  margin-top: 10px; padding: 7px 10px; font-size: 10.5px; color: #7b8794;
+  background: var(--di-bg); border-radius: 6px; line-height: 1.6; text-align: center;
+}
+#di-floating-toolbar .di-tb-tip b { color: var(--di-navy); font-weight: 700; }
+
+/* ============================================================
+   ⑥ 页脚
+   ============================================================ */
+#di-floating-toolbar .di-foot {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 5px 12px;
+  background: #f7f9fb;
+  border-top: 1px solid var(--di-line);
+  border-radius: 0 0 0 14px;
+  font-size: 9.5px; color: #98a4b0;
+}
+#di-floating-toolbar.di-dock-left .di-foot { border-radius: 0 0 14px 0; }
+#di-floating-toolbar .di-foot span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ============================================================
+   ⑦ 收起态：只留头部把手
+   ============================================================ */
+#di-floating-toolbar.di-collapsed {
+  width: 32px !important;
+  min-width: 32px; max-width: 32px;
+  height: auto !important;
+  min-height: 0;                       /* 4.7.1：清除基础样式的 160px 保底，收起态只留细把手 */
+  border-radius: 8px 0 0 8px;
+  box-shadow: 0 4px 16px rgba(13, 37, 64, .12);
+}
+#di-floating-toolbar.di-collapsed.di-dock-left { border-radius: 0 8px 8px 0; }
+#di-floating-toolbar.di-collapsed .di-head {
+  padding: 10px 5px; justify-content: center; border-radius: 8px 0 0 8px;
+}
+#di-floating-toolbar.di-collapsed.di-dock-left .di-head { border-radius: 0 8px 8px 0; }
+#di-floating-toolbar.di-collapsed .di-head-left,
+#di-floating-toolbar.di-collapsed .di-head-ver,
+#di-floating-toolbar.di-collapsed .di-conn,
+#di-floating-toolbar.di-collapsed .di-tb-toggle,
+#di-floating-toolbar.di-collapsed .di-notice,
+#di-floating-toolbar.di-collapsed .di-posbar,
+#di-floating-toolbar.di-collapsed .di-scroll-wrap,
+#di-floating-toolbar.di-collapsed .di-foot { display: none !important; }
+#di-floating-toolbar.di-collapsed .di-tb-handle { display: block; }
+
+/* ============================================================
+   ⑧ 兼容：旧版页面级 toast 仅在通知条尚未挂载时作为兜底
+   ============================================================ */
+#di-toast {
+  position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
+  padding: 10px 20px; border-radius: 8px;
+  color: #fff; font-size: 13px; font-weight: 600;
+  z-index: 9999999; box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  max-width: 80vw; white-space: normal; word-break: break-word;
+}
+.di-toast-info { background: var(--di-navy); }
+.di-toast-success { background: var(--di-green-d); }
+.di-toast-error { background: #c0392b; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 900px) {
+  #di-floating-toolbar:not(.di-collapsed) { width: 340px; top: 60px; }
+  #di-floating-toolbar.di-collapsed { width: 28px; }
+}
+@media (max-height: 620px) {
+  /* 4.7.1：高度仍由 --di-toolbar-top 自适应；矮屏只收紧底部留白，给内容多让出空间。
+     不再用固定 height / top 覆盖，否则会打乱视口算式与 JS 同步的 top。 */
+  #di-floating-toolbar:not(.di-collapsed) { --di-toolbar-bottom: 16px; }
+}

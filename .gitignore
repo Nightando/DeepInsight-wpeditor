@@ -1,0 +1,8 @@
+# WorkBuddy 项目工作数据，不是扩展代码
+.workbuddy/
+
+# 系统与编辑器生成物
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp

@@ -1,0 +1,53 @@
+{
+  "name": "深维 · 公众号组件库",
+  "description": "深维公众号组件库：66 个组件悬停看完整预设效果（浮层高度随视口自适应）、点击或回车即插入编辑器光标处，编辑器里有选中文字则直接用组件样式替换；快捷排版支持在 iframe 正文里选中改样式，自定义插槽位于浮窗上方，HTML 原样导入后注入按钮常驻可用，全部集成在页面内唯一浮窗，高度随浏览器视口自适应。数据全部本地存储，无需登录。",
+  "version": "4.8.1",
+  "minimum_chrome_version": "114",
+  "icons": {
+    "16": "icons/icon_16.png",
+    "32": "icons/icon_32.png",
+    "48": "icons/icon_48.png",
+    "128": "icons/icon_128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "webNavigation",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://mp.weixin.qq.com/*"
+  ],
+  "action": {
+    "default_title": "深维 · 点击展开/收起组件库浮窗",
+    "default_icon": {
+      "16": "icons/icon_16.png",
+      "32": "icons/icon_32.png",
+      "48": "icons/icon_48.png",
+      "128": "icons/icon_128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "shared/sanitize.js",
+        "components/components.js",
+        "content/content.js",
+        "content/panel.js"
+      ],
+      "css": [
+        "content/content.css"
+      ],
+      "matches": [
+        "https://mp.weixin.qq.com/*"
+      ],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "manifest_version": 3
+}
