@@ -12,7 +12,7 @@ var _lastTabId = null;
 var _editorFrameId = null;  // 缓存找到的编辑器 iframe frameId
 
 // 每次插件图标被点击时（Chrome 114+ sidePanel 触发）
-// 4.3.0：唯一窗口是页面内浮窗，不再注册侧边栏。
+// 唯一窗口是页面内浮窗，不再注册侧边栏。
 // 点击扩展图标 → 让 content script 展开/收起同一个浮窗。
 try {
   if (chrome.action && chrome.action.onClicked) {

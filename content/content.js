@@ -47,14 +47,9 @@
     // 已经注入过就跳过
     if (document.getElementById('di-floating-toolbar')) return;
 
-    // 4.6.0 快捷功能归位说明：
-    // 微信公众平台编辑器没有对外开放的「自定义菜单项」注册接口，编辑器原生
-    // 工具条由其自身框架按内部状态渲染；content script 运行在 isolated world，
-    // 拿不到编辑器实例，往原生菜单里追加的 DOM 会在下一次重渲染被抹掉。
-    // 且快捷排版的 execCommand 绑定在本帧 document 上，把触发点搬进原生工具条
-    // 会改变作用文档，等于改变行为。因此采用备用方案：快捷排版 / 自定义插槽
-    // 从浮窗底部移到浮窗上方（见 content.css 的 order），并删掉重复的「组件库」
-    // 跳转按钮。所有 data-action 与处理函数保持原样，不做任何逻辑改动。
+    // 快捷排版与自定义插槽固定在浮窗上方（见 content.css 的 order）。
+    // 编辑器原生菜单没有开放注册接口，且把触发点搬过去会改变 execCommand
+    // 的作用文档，因此不并入原生菜单。
     var root = document.createElement('div');
     root.id = 'di-floating-toolbar';
     // 默认吸附右边缘
@@ -93,7 +88,7 @@
         '<div class="di-pos-nav" id="di-pos-nav">' +
           '<button class="di-pos-chip" data-di-goto="快捷排版">排版</button>' +
           '<button class="di-pos-chip" data-di-goto="自定义插槽">插槽</button>' +
-          // 4.7.0：常驻「实时预览」分区已移除，对应芯片一并去掉，
+          // 常驻「实时预览」分区已移除，对应芯片一并去掉，
           // 组件效果改由悬停卡片时的轻量浮层呈现，不占滚动流也不占导航位。
           '<button class="di-pos-chip" data-di-goto="快捷操作">操作</button>' +
           '<button class="di-pos-chip" data-di-goto="组件库">组件库</button>' +
@@ -110,7 +105,7 @@
               '</div>' +
               '<div class="di-subhead">常用操作</div>' +
               '<div class="di-tb-row">' +
-                // 4.6.0：删掉这里的「📦 组件库」按钮。它与下方「快捷操作」里的
+                // 删掉这里的「📦 组件库」按钮。它与下方「快捷操作」里的
                 // 「⇥ 组件库」以及位置条「组件库」芯片是同一个动作，属重复控件。
                 '<button class="di-tb-btn di-tb-btn-primary" data-action="beautify">✨ 一键美化</button>' +
               '</div>' +
@@ -205,7 +200,7 @@
     var handleEl = root.querySelector('#di-tb-handle');
     var dragHandle = root.querySelector('#di-tb-drag');
 
-    // 4.7.1：浮窗高度按视口自适应（calc(100vh - top - bottom)）。
+    // 浮窗高度按视口自适应（calc(100vh - top - bottom)）。
     // 凡改动 top 的地方都必须同步 --di-toolbar-top，
     // 否则拖到中间后高度仍按初始 top 计算，底部会被裁掉。
     function setToolbarTop(px) {
@@ -301,7 +296,7 @@
 
     // ---- 拖拽：只拖拽 header 部分，释放后边缘吸附 ----
     var dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
-    // 4.8.0：收起态按下时先只展开，等真正移动超过阈值才进入拖拽。
+    // 收起态按下时先只展开，等真正移动超过阈值才进入拖拽。
     // 旧写法用 setTimeout 延迟 50ms 再 beginDrag，快速单击时 mouseup 先到、
     // beginDrag 迟到，dragging 永远没人复位，浮窗会粘着鼠标走。
     var pendingDragStart = null;
@@ -353,7 +348,7 @@
       var w = root.offsetWidth;
       var h = root.offsetHeight;
       newLeft = Math.max(-w + 20, Math.min(newLeft, vw - 20));
-      // 4.7.1：为自适应高度留足空间（min-height 160 + 底部留白 32），
+      // 为自适应高度留足空间（min-height 160 + 底部留白 32），
       // 否则拖到很低时 calc 高度被 min-height 顶开，底部反而溢出视口。
       newTop = Math.max(0, Math.min(newTop, vh - 200));
 
@@ -390,7 +385,7 @@
         root.classList.remove('di-dock-left');
         if (handleEl) handleEl.querySelector('.di-tb-handle-icon').textContent = '◀';
       } else {
-        // 4.8.0：中间态明确记为未吸附，避免 resize 时按旧 dockSide 弹回边缘
+        // 中间态明确记为未吸附，避免 resize 时按旧 dockSide 弹回边缘
         dockSide = null;
         root.classList.remove('di-dock-left');
       }
@@ -413,7 +408,7 @@
         root.style.right = '0';
         root.style.left = 'auto';
       }
-      // 4.8.0：窗口变矮后 top 可能落到视口外，同步变量让高度算式重算，
+      // 窗口变矮后 top 可能落到视口外，同步变量让高度算式重算，
       // 避免 min-height 把底部顶出屏幕。中间态（dockSide=null）只管垂直，不弹回边缘。
       var top = Math.max(0, Math.min(rect.top, vh - 200));
       if (Math.abs(top - rect.top) > 1) setToolbarTop(top);
@@ -548,7 +543,7 @@
           showToast('✓ 「' + (req.component.name || '组件') + '」已添加到悬浮窗', 'success');
           if (sendResp) sendResp({ success: true });
         } else if (sendResp) {
-          // 4.8.0：非法索引也要回包，否则发送方会一直等 reply 到超时
+          // 非法索引也要回包，否则发送方会一直等 reply 到超时
           sendResp({ success: false });
         }
         return true;
@@ -564,7 +559,7 @@
     // 初始加载
     loadCustomComponents();
 
-    // 4.3.0：把浮窗控制能力交给统一入口层（仅暴露，不改逻辑）
+    // 把浮窗控制能力交给统一入口层（仅暴露，不改逻辑）
     window.__DI_TOOLBAR = {
       expand: expand,
       collapse: collapse,
@@ -589,7 +584,7 @@
       return;
     }
 
-    // 4.8.0：公众号正文几乎总在同源 iframe 里。原来只扫主文档、
+    // 公众号正文几乎总在同源 iframe 里。原来只扫主文档、
     // 只读 window.getSelection()，选中文字套样式永远不触发。
     // 这里优先复用已有的跨帧探测，找不到再回退主文档。
     var target = findEditorTarget();
@@ -667,10 +662,10 @@
   // ---------- 对选中文本应用样式 ----------
   function applyStyleToSelection(action, editor, sel, editorDoc) {
     var doc = editorDoc || document;
-    // 4.8.0：focus 可能让 iframe 里的选区丢失，先保存再恢复
+    // focus 可能让 iframe 里的选区丢失，先保存再恢复
     try { restoreEditorFocus(false); } catch (e) { try { editor.focus(); } catch (e2) {} }
     var rawText = sel ? String(sel.toString() || '') : '';
-    // 4.8.0：选中文字含 < & 时必须转义，否则拼进 insertHTML 会被当标签解析
+    // 选中文字含 < & 时必须转义，否则拼进 insertHTML 会被当标签解析
     var text = (window.DI_SANITIZE && window.DI_SANITIZE.escapeHtml)
       ? window.DI_SANITIZE.escapeHtml(rawText)
       : rawText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1548,7 +1543,7 @@
     // 浮窗本身即 content script，四级降级链里的「主动注入脚本」必然已完成
     ensureInjected: function (cb) { if (cb) cb(true); },
 
-    // 4.5.0：读编辑器选区（点击组件时用来替换组件正文），以及把焦点交还编辑器
+    // 读编辑器选区（点击组件时用来替换组件正文），以及把焦点交还编辑器
     readSelection: function () { return readEditorSelectionInfo(); },
     restoreEditorFocus: function (collapseSelection) { return restoreEditorFocus(collapseSelection); },
 

@@ -68,7 +68,7 @@ const csJs = (manifest.content_scripts || []).flatMap((cs) => cs.js || []);
   .forEach((p) => { if (!csJs.includes(p)) err(`content_scripts 缺少 ${p}`); });
 
 // ---------- 4. 本地 HTML 资源引用 ----------
-const htmlFiles = ['tools/test.html', 'tools/selftest.html'].filter(exists);
+const htmlFiles = ['tools/selftest.html'].filter(exists);
 const htmlRefs = [];
 htmlFiles.forEach((html) => {
   const dir = path.dirname(html);
@@ -246,7 +246,7 @@ requiredActions.forEach((a) => {
   if (!panelSrc.includes(`data-action="${a}"`)) err(`组件卡片缺少操作入口: ${a}`);
   if (!panelSrc.includes(`action === '${a}'`)) err(`组件卡片操作未绑定: ${a}`);
 });
-// 4.5.0：卡片只留「快捷」一个按钮，其余按钮与对应的 data-action 必须消失
+// 卡片只留「快捷」一个按钮，其余按钮与对应的 data-action 必须消失
 ['direct', 'quickInsert', 'edit', 'insert', 'copySource', 'copy'].forEach((a) => {
   if (panelSrc.includes(`data-action="${a}"`)) err(`组件卡片仍在渲染多余按钮: ${a}`);
 });
@@ -478,7 +478,7 @@ if (!panelSrc.includes('pointer-events:none')) err('悬停浮层会抢鼠标事�
 if (!panelSrc.includes('DEEPINSIGHT_COMPONENTS.renderComponent(comp.id, {})')) {
   err('悬停预览没有用组件预设字段值渲染（预览内容必须是预设内容）');
 }
-// 4.8.1：悬停浮层仍缩略，但比例提到 90%；高度按视口自适应，不能退回 210px 封顶
+// 悬停浮层仍缩略，但比例提到 90%；高度按视口自适应，不能退回 210px 封顶
 if (!panelSrc.includes('transform: scale(.9)')) err('悬停预览缩略比例不是 4.8.1 的 90%');
 if (/transform:\s*scale\(\.78\)/.test(panelSrc)) err('悬停预览仍是旧的 78% 缩放，内容偏小');
 if (!/Math\.min\(480,\s*Math\.max\(280,/.test(panelSrc)) err('悬停预览高度上限未按视口自适应');

@@ -1,5 +1,5 @@
 /* ============================================================
-   深维公众号组件库 · 统一浮窗外观  v4.4.0
+   深维公众号组件库 · 统一浮窗外观
    一套界面：单一头部 / 常驻状态与位置区 / 单一滚动体 / 可见滚动轨 / 页脚
    边缘吸附 + 极窄收起把手 + 过渡动画全部保留，仅重构信息层级与呈现
    ============================================================ */
@@ -15,7 +15,7 @@
   --di-line: #e6ebf0;
   --di-bg: #f4f7f9;
 
-  /* 4.7.1：高度完全由视口决定，不再有 720px 上限。
+  /* 高度完全由视口决定，不再有 720px 上限。
      --di-toolbar-top 由 JS 在初始化/拖拽/展开时同步为浮窗当前 top，
      这样无论浮窗被拖到哪里，底部都固定留出 --di-toolbar-bottom 的空隙。 */
   --di-toolbar-top: 80px;
@@ -252,7 +252,7 @@
 }
 #di-floating-toolbar .di-tb-body::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
-/* 4.6.0：快捷排版 / 自定义插槽从浮窗底部移到上方，组件库面板随其后。
+/* 快捷排版 / 自定义插槽从浮窗底部移到上方，组件库面板随其后。
    仍然只有这一条滚动流，顺序靠 order 调整，不改任何功能逻辑。
    位置条与滚动轨按 rect.top 自动识别新顺序，无需重建导航。 */
 #di-floating-toolbar .di-quick { order: 1; display: block; flex-shrink: 0; }
@@ -397,7 +397,7 @@
   width: 32px !important;
   min-width: 32px; max-width: 32px;
   height: auto !important;
-  min-height: 0;                       /* 4.7.1：清除基础样式的 160px 保底，收起态只留细把手 */
+  min-height: 0;                       /* 清除基础样式的 160px 保底，收起态只留细把手 */
   border-radius: 8px 0 0 8px;
   box-shadow: 0 4px 16px rgba(13, 37, 64, .12);
 }
@@ -437,7 +437,7 @@
   #di-floating-toolbar.di-collapsed { width: 28px; }
 }
 @media (max-height: 620px) {
-  /* 4.7.1：高度仍由 --di-toolbar-top 自适应；矮屏只收紧底部留白，给内容多让出空间。
+  /* 高度仍由 --di-toolbar-top 自适应；矮屏只收紧底部留白，给内容多让出空间。
      不再用固定 height / top 覆盖，否则会打乱视口算式与 JS 同步的 top。 */
   #di-floating-toolbar:not(.di-collapsed) { --di-toolbar-bottom: 16px; }
 }
